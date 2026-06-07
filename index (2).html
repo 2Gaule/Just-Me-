@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Just Me — Learn to enjoy your own company</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --sage:#7A9E7E;--sage-pale:#EEF3EE;--sage-light:#C8D9C9;
+  --cream:#F5F0E8;--dark:#1E1E1E;--muted:#6B6B6B;--white:#FFFFFF;
+  --danger:#E24B4A;--success:#2E7D32;--success-bg:#E8F5E9;
+  --r:16px;
+}
+html,body{min-height:100%;background:#111;display:flex;justify-content:center;font-family:'DM Sans',sans-serif;margin:0;}
+#phone{width:390px;min-height:100vh;background:var(--cream);position:relative;box-shadow:0 0 80px rgba(0,0,0,.6);display:flex;flex-direction:column;}
+@media(max-width:420px){#phone{width:100%;box-shadow:none;}}
+
+/* LAYERS */
+#ob-layer,#auth-layer,#app-layer{position:absolute;inset:0;display:none;flex-direction:column;}
+#ob-layer.show,#auth-layer.show,#app-layer.show{display:flex;}
+
+/* ANIMATIONS */
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.anim{animation:up .35s ease both;}
+
+/* STATUS */
+.status{padding:14px 20px 4px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-weight:500;flex-shrink:0;}
+
+/* NAV */
+.nav{background:var(--white);border-top:.5px solid rgba(0,0,0,.08);padding:8px 0 20px;display:flex;justify-content:space-around;flex-shrink:0;}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:10px;font-family:'DM Sans',sans-serif;transition:color .2s;}
+.ni.on{color:var(--sage);}
+.ni i{font-size:22px;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;flex:1;background:var(--cream);overflow:hidden;}
+.screen.active{display:flex;animation:up .3s ease;}
+.content{flex:1;overflow-y:auto;padding:0 18px 24px;}
+.ph{padding:18px 18px 0;margin-bottom:18px;flex-shrink:0;}
+.ttl{font-family:'DM Serif Display',serif;font-size:26px;line-height:1.2;color:var(--dark);margin-bottom:4px;}
+.ttl span{color:var(--sage);}
+.sub{font-size:13px;color:var(--muted);line-height:1.5;}
+.sec{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px;}
+
+/* ONBOARDING */
+#ob-layer{background:var(--dark);}
+.ob-slide{display:none;flex-direction:column;flex:1;padding:56px 32px 40px;animation:up .4s ease;}
+.ob-slide.active{display:flex;}
+.ob-logo{display:flex;align-items:center;gap:10px;margin-bottom:52px;}
+.ob-logo svg{width:30px;height:30px;}
+.ob-logo span{font-family:'DM Serif Display',serif;font-size:21px;color:#fff;}
+.ob-icon{width:68px;height:68px;border-radius:20px;background:rgba(122,158,126,.15);display:flex;align-items:center;justify-content:center;margin-bottom:26px;}
+.ob-icon i{font-size:32px;color:var(--sage);}
+.ob-h{font-family:'DM Serif Display',serif;font-size:30px;line-height:1.2;color:#fff;margin-bottom:14px;}
+.ob-h span{color:var(--sage);}
+.ob-p{font-size:14px;color:rgba(255,255,255,.55);line-height:1.75;flex:1;margin-bottom:28px;}
+.ob-dots{display:flex;gap:6px;margin-bottom:22px;justify-content:center;}
+.od{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s;}
+.od.on{background:var(--sage);width:20px;border-radius:3px;}
+
+/* AUTH */
+#auth-layer{background:var(--dark);overflow-y:auto;}
+.auth-inner{padding:56px 28px 40px;display:flex;flex-direction:column;flex:1;}
+.auth-back{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;margin-bottom:32px;background:none;border:none;font-family:'DM Sans',sans-serif;}
+.auth-title{font-family:'DM Serif Display',serif;font-size:28px;color:#fff;margin-bottom:8px;line-height:1.2;}
+.auth-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:30px;line-height:1.6;}
+.field-label{font-size:11px;font-weight:500;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px;}
+.field-input{width:100%;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:15px;color:#fff;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.field-input:focus{border-color:var(--sage);}
+.field-input::placeholder{color:rgba(255,255,255,.22);}
+.auth-or{text-align:center;color:rgba(255,255,255,.25);font-size:12px;margin:18px 0;display:flex;align-items:center;gap:12px;}
+.auth-or::before,.auth-or::after{content:'';flex:1;height:.5px;background:rgba(255,255,255,.1);}
+.social-btn{width:100%;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.12);border-radius:10px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;transition:background .2s;}
+.social-btn:active{background:rgba(255,255,255,.14);}
+.auth-switch{text-align:center;font-size:13px;color:rgba(255,255,255,.35);margin-top:22px;}
+.auth-switch span{color:var(--sage);cursor:pointer;font-weight:500;}
+.err{font-size:12px;color:#FF8A80;margin-bottom:10px;display:none;padding:8px 12px;background:rgba(226,75,74,.1);border-radius:8px;}
+
+/* BUTTONS */
+.btn{width:100%;background:var(--sage);color:#fff;border:none;border-radius:var(--r);padding:15px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .2s,transform .12s;margin-top:4px;}
+.btn:active{opacity:.88;transform:scale(.99);}
+.btn-ghost{width:100%;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:.5px solid rgba(255,255,255,.14);border-radius:var(--r);padding:15px;font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer;margin-top:10px;transition:background .2s;}
+
+/* HERO CARD */
+.hero{background:var(--sage);border-radius:20px;padding:20px;color:#fff;margin-bottom:18px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s;}
+.hero:active{transform:scale(.99);}
+.hero::before{content:'';position:absolute;top:-24px;right:-24px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.09);}
+.lbadge{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.hero h2{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:6px;font-weight:400;}
+.hero p{font-size:12px;opacity:.85;line-height:1.5;margin-bottom:14px;}
+.pbar{background:rgba(255,255,255,.22);height:4px;border-radius:4px;margin-bottom:5px;}
+.pfill{height:4px;border-radius:4px;background:#fff;transition:width .6s ease;}
+
+/* STATS */
+.srow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+.sbox{background:var(--white);border-radius:var(--r);padding:12px 8px;text-align:center;border:.5px solid rgba(0,0,0,.07);}
+.sval{font-family:'DM Serif Display',serif;font-size:22px;color:var(--sage);transition:all .3s;}
+.slbl{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* CHALLENGE CARDS */
+.cc{background:var(--white);border-radius:var(--r);padding:14px;margin-bottom:10px;border:.5px solid rgba(0,0,0,.07);display:flex;align-items:center;gap:12px;transition:transform .15s,opacity .3s;}
+.cc.clickable{cursor:pointer;}
+.cc.clickable:active{transform:scale(.98);}
+.cc.completed{opacity:.7;}
+.cico{width:42px;height:42px;border-radius:11px;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px;color:var(--sage);transition:all .3s;}
+.cico.done{background:var(--success-bg);color:var(--success);}
+.cinf{flex:1;min-width:0;}
+.cinf h4{font-size:13px;font-weight:500;margin-bottom:2px;color:var(--dark);}
+.cinf p{font-size:11px;color:var(--muted);}
+.cpts{font-size:11px;font-weight:500;color:var(--sage);background:var(--sage-pale);padding:3px 8px;border-radius:8px;flex-shrink:0;}
+.dbadge{background:var(--success-bg);color:var(--success);font-size:11px;padding:3px 8px;border-radius:8px;flex-shrink:0;}
+
+/* LEVEL TILES */
+.lgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px;}
+.ltile{border-radius:var(--r);padding:15px 13px;border:.5px solid rgba(0,0,0,.07);background:var(--white);}
+.ltile.locked{opacity:.38;pointer-events:none;}
+.ltile.cur{border:1.5px solid var(--sage);background:var(--sage-pale);}
+.lvn{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;margin-top:8px;}
+.lvname{font-size:14px;font-weight:500;color:var(--dark);margin-bottom:8px;}
+.lpb{background:#E0E0E0;height:3px;border-radius:3px;}
+.lpf{height:3px;border-radius:3px;background:var(--sage);transition:width .6s ease;}
+
+/* STREAK */
+.streak-row{display:flex;gap:6px;justify-content:center;margin-bottom:18px;}
+.sd{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;}
+.sd.done{background:var(--sage);color:#fff;}
+.sd.today{background:var(--sage-pale);color:var(--sage);border:1.5px solid var(--sage);}
+.sd.off{background:var(--white);color:var(--muted);border:.5px solid rgba(0,0,0,.1);}
+
+/* MAP */
+.map-wrap{background:#D6E8D7;border-radius:20px;height:155px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;margin-bottom:18px;position:relative;overflow:hidden;}
+.mgrid{position:absolute;inset:0;opacity:.15;background-image:linear-gradient(#7A9E7E 1px,transparent 1px),linear-gradient(90deg,#7A9E7E 1px,transparent 1px);background-size:28px 28px;}
+.mdot{position:absolute;width:10px;height:10px;background:var(--sage);border-radius:50%;border:2px solid #fff;}
+.mlbl{font-size:12px;font-weight:500;color:var(--sage);background:#fff;padding:4px 12px;border-radius:20px;z-index:1;}
+.msub{font-size:11px;color:var(--muted);z-index:1;}
+
+/* VENUES */
+.vc{display:flex;align-items:center;gap:11px;background:var(--white);border-radius:var(--r);padding:13px;margin-bottom:9px;border:.5px solid rgba(0,0,0,.07);}
+.vico{width:40px;height:40px;border-radius:10px;background:var(--sage-pale);color:var(--sage);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.vinf h4{font-size:13px;font-weight:500;margin-bottom:2px;color:var(--dark);}
+.vinf p{font-size:11px;color:var(--muted);}
+.vperk{margin-left:auto;font-size:10px;background:var(--sage-pale);color:#3B6D11;padding:3px 8px;border-radius:8px;font-weight:500;flex-shrink:0;text-align:center;line-height:1.4;}
+
+/* PILLS */
+.pills{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;}
+.pill{background:var(--white);border:.5px solid rgba(0,0,0,.1);color:var(--muted);padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.pill.on{background:var(--sage);color:#fff;border-color:var(--sage);}
+
+/* COMMUNITY FEED */
+.feed-card{background:var(--white);border-radius:var(--r);padding:14px;margin-bottom:10px;border:.5px solid rgba(0,0,0,.07);}
+.feed-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.feed-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;}
+.feed-name{font-size:13px;font-weight:500;color:var(--dark);}
+.feed-time{font-size:11px;color:var(--muted);}
+.feed-chip{background:var(--sage-pale);border-radius:8px;padding:7px 10px;font-size:11px;color:#3B6D11;display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.feed-txt{font-size:12px;line-height:1.65;color:var(--dark);margin-bottom:10px;}
+.feed-actions{display:flex;gap:8px;}
+.feed-btn{background:none;border:.5px solid rgba(0,0,0,.12);color:var(--muted);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px;transition:all .2s;}
+.feed-btn.liked{color:var(--sage);border-color:var(--sage-light);background:var(--sage-pale);}
+
+/* JOURNAL */
+.journal-entry{background:var(--white);border-radius:0 var(--r) var(--r) 0;padding:14px;margin-bottom:10px;border-left:3px solid var(--sage);border-top:.5px solid rgba(0,0,0,.07);border-right:.5px solid rgba(0,0,0,.07);border-bottom:.5px solid rgba(0,0,0,.07);}
+.journal-entry .jdate{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.journal-entry .jtxt{font-size:12px;line-height:1.65;color:var(--dark);}
+.journal-entry .jdelete{float:right;background:none;border:none;color:rgba(226,75,74,.5);cursor:pointer;font-size:16px;margin-top:-2px;}
+
+/* PROFILE */
+.pfhdr{display:flex;align-items:center;gap:14px;background:var(--white);border-radius:20px;padding:18px;margin-bottom:18px;border:.5px solid rgba(0,0,0,.07);}
+.av{width:54px;height:54px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:22px;color:#fff;flex-shrink:0;}
+.pname{font-size:16px;font-weight:500;color:var(--dark);margin-bottom:2px;}
+.psub{font-size:12px;color:var(--muted);}
+.bgrid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.bitem{background:var(--white);border-radius:11px;padding:9px 13px;font-size:12px;color:var(--dark);border:.5px solid rgba(0,0,0,.07);display:flex;align-items:center;gap:5px;}
+.bitem i{font-size:16px;color:var(--sage);}
+
+/* NOTIFICATIONS */
+.notif-item{background:var(--white);border-radius:var(--r);padding:14px;margin-bottom:9px;border:.5px solid rgba(0,0,0,.07);display:flex;gap:12px;align-items:flex-start;}
+.ntico{width:36px;height:36px;border-radius:10px;background:var(--sage-pale);color:var(--sage);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.ntxt{font-size:12px;line-height:1.55;color:var(--dark);flex:1;}
+.ntxt strong{font-weight:500;}
+.nttime{font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* MODAL */
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:300;}
+.modal-overlay.hidden{display:none;}
+.modal-sheet{background:var(--cream);border-radius:24px 24px 0 0;padding:18px 20px 36px;width:100%;animation:slideUp .3s ease;}
+.mhandle{width:34px;height:4px;background:var(--sage-light);border-radius:4px;margin:0 auto 18px;}
+.mtitle{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:7px;color:var(--dark);}
+.msubtxt{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.steps{list-style:none;margin-bottom:18px;}
+.steps li{display:flex;align-items:flex-start;gap:11px;margin-bottom:13px;font-size:12px;line-height:1.5;color:var(--dark);}
+.snum{width:22px;height:22px;border-radius:50%;background:var(--sage);color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+
+/* JOURNAL MODAL */
+.jmodal{background:var(--cream);border-radius:24px 24px 0 0;padding:18px 20px 36px;width:100%;animation:slideUp .3s ease;}
+.jtextarea{width:100%;background:var(--white);border:.5px solid rgba(0,0,0,.12);border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);outline:none;resize:none;line-height:1.6;min-height:130px;margin-bottom:14px;}
+.jtextarea:focus{border-color:var(--sage);}
+.jtextarea::placeholder{color:var(--muted);}
+
+/* TOAST */
+#toast{position:absolute;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--dark);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s ease;white-space:nowrap;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* CONFETTI */
+.confetti-dot{position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:500;animation:confetti-fall 1.2s ease forwards;}
+@keyframes confetti-fall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(200px) rotate(720deg)}}
+
+/* PROGRESS BAR ANIMATE */
+.pfill{animation:none;}
+
+/* LOGO */
+.logo-mark{display:flex;align-items:center;gap:8px;}
+.logo-mark svg{width:26px;height:26px;}
+.logo-mark span{font-family:'DM Serif Display',serif;font-size:18px;color:var(--dark);}
+
+/* INLINE EDIT */
+.inline-edit{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);width:100%;outline:none;cursor:pointer;}
+.inline-edit:focus{cursor:text;}
+</style>
+</head>
+<body>
+<div id="phone">
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════
+     ONBOARDING
+══════════════════════════════════ -->
+<div id="ob-layer" class="show">
+  <div class="ob-slide active" id="ob-0">
+    <div class="ob-logo">
+      <svg viewBox="0 0 40 40" fill="none"><path d="M20 8 C10 8 6 14 6 20 C6 27 11 33 20 33 C29 33 34 27 34 20 C34 14 30 8 20 8 Z" fill="none" stroke="#7A9E7E" stroke-width="3.5" stroke-linecap="round"/></svg>
+      <span>Just Me</span>
+    </div>
+    <div class="ob-icon"><i class="ti ti-seedling"></i></div>
+    <div class="ob-h">You don't need<br><span>anyone else</span><br>to have a great time.</div>
+    <div class="ob-p">69% of young adults have experienced unwanted loneliness — not because they lack friends, but because they've never learned to enjoy their own company. Just Me changes that.</div>
+    <div class="ob-dots"><div class="od on"></div><div class="od"></div><div class="od"></div></div>
+    <button class="btn" onclick="obNext(1)">Get started</button>
+  </div>
+  <div class="ob-slide" id="ob-1">
+    <div class="ob-logo"><svg viewBox="0 0 40 40" fill="none"><path d="M20 8 C10 8 6 14 6 20 C6 27 11 33 20 33 C29 33 34 27 34 20 C34 14 30 8 20 8 Z" fill="none" stroke="#7A9E7E" stroke-width="3.5" stroke-linecap="round"/></svg><span>Just Me</span></div>
+    <div class="ob-icon"><i class="ti ti-route"></i></div>
+    <div class="ob-h">A <span>12-week</span><br>gamified journey</div>
+    <div class="ob-p">Progress through 4 levels — Curious → Explorer → Confident → Solo Master. Each challenge builds real confidence with prep audio, journal prompts, and real-world rewards.</div>
+    <div class="ob-dots"><div class="od"></div><div class="od on"></div><div class="od"></div></div>
+    <button class="btn" onclick="obNext(2)">Next</button>
+    <button class="btn-ghost" onclick="obNext(0)">Back</button>
+  </div>
+  <div class="ob-slide" id="ob-2">
+    <div class="ob-logo"><svg viewBox="0 0 40 40" fill="none"><path d="M20 8 C10 8 6 14 6 20 C6 27 11 33 20 33 C29 33 34 27 34 20 C34 14 30 8 20 8 Z" fill="none" stroke="#7A9E7E" stroke-width="3.5" stroke-linecap="round"/></svg><span>Just Me</span></div>
+    <div class="ob-icon"><i class="ti ti-map-pin"></i></div>
+    <div class="ob-h">Real venues,<br><span>real rewards</span></div>
+    <div class="ob-p">Our Solo-Friendly Map connects you with cafés, restaurants and museums in Madrid that welcome solo visitors and reward you for showing up alone.</div>
+    <div class="ob-dots"><div class="od"></div><div class="od"></div><div class="od on"></div></div>
+    <button class="btn" onclick="showAuth('signup')">Create my account</button>
+    <button class="btn-ghost" onclick="showAuth('login')">I already have an account</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     AUTH
+══════════════════════════════════ -->
+<div id="auth-layer">
+  <div class="auth-inner" id="auth-signup-inner">
+    <button class="auth-back" onclick="showOb(2)"><i class="ti ti-arrow-left" style="font-size:18px"></i> Back</button>
+    <div class="auth-title">Create your<br>account</div>
+    <div class="auth-sub">Join thousands learning to enjoy their own company.</div>
+    <div class="field-label">Full name</div>
+    <input class="field-input" id="su-name" type="text" placeholder="Lucía García" autocomplete="name">
+    <div class="field-label">Email</div>
+    <input class="field-input" id="su-email" type="email" placeholder="you@email.com" autocomplete="email">
+    <div class="field-label">Password</div>
+    <input class="field-input" id="su-pass" type="password" placeholder="Min. 6 characters">
+    <div class="err" id="su-err">Please fill in all fields correctly (password min. 6 chars).</div>
+    <button class="btn" onclick="doSignup()">Create account</button>
+    <div class="auth-or">or</div>
+    <button class="social-btn" onclick="quickLogin('Google User','google@gmail.com')">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-switch">Already have an account? <span onclick="showAuth('login')">Sign in</span></div>
+  </div>
+  <div class="auth-inner" id="auth-login-inner" style="display:none;">
+    <button class="auth-back" onclick="showOb(2)"><i class="ti ti-arrow-left" style="font-size:18px"></i> Back</button>
+    <div class="auth-title">Welcome<br>back</div>
+    <div class="auth-sub">Ready for your next solo adventure?</div>
+    <div class="field-label">Email</div>
+    <input class="field-input" id="li-email" type="email" placeholder="you@email.com">
+    <div class="field-label">Password</div>
+    <input class="field-input" id="li-pass" type="password" placeholder="Your password">
+    <div style="text-align:right;margin-bottom:18px;"><span style="font-size:12px;color:rgba(255,255,255,.35);cursor:pointer;" onclick="showToast('Password reset email sent! 📩')">Forgot password?</span></div>
+    <div class="err" id="li-err">Please enter your email and password.</div>
+    <button class="btn" onclick="doLogin()">Sign in</button>
+    <div class="auth-or">or</div>
+    <button class="social-btn" onclick="quickLogin('Google User','google@gmail.com')">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-switch">No account? <span onclick="showAuth('signup')">Sign up free</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     APP
+══════════════════════════════════ -->
+<div id="app-layer">
+  <div id="screens" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+
+  <!-- HOME -->
+  <div class="screen active" id="s-home">
+    <div class="status">
+      <span id="clock">9:41</span>
+      <div style="display:flex;gap:4px;align-items:center;"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div>
+    </div>
+    <div class="ph">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="logo-mark"><svg viewBox="0 0 40 40" fill="none"><path d="M20 8 C10 8 6 14 6 20 C6 27 11 33 20 33 C29 33 34 27 34 20 C34 14 30 8 20 8 Z" fill="none" stroke="#7A9E7E" stroke-width="3.5" stroke-linecap="round"/></svg><span>Just Me</span></div>
+        <div style="position:relative;cursor:pointer;" onclick="showScreen('notifs')">
+          <i class="ti ti-bell" style="font-size:22px;color:var(--muted)"></i>
+          <div id="notif-dot" style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:1.5px solid var(--cream);"></div>
+        </div>
+      </div>
+      <div class="ttl">Good <span id="greeting-time">evening</span>, <span id="home-name">there</span></div>
+      <div class="sub" id="home-sub">Level 2 · Explorer · 0 challenges done this week</div>
+    </div>
+    <div class="content">
+      <div class="hero" onclick="openChallengeModal('dinner')">
+        <div class="lbadge">Today's challenge</div>
+        <h2>Solo dinner at a restaurant</h2>
+        <p>Pick a table for one. Put your phone down. Order exactly what you want.</p>
+        <div class="pbar"><div class="pfill" id="hero-progress" style="width:33%"></div></div>
+        <div class="plbl" id="hero-progress-lbl">1 of 3 completed · Level 2</div>
+      </div>
+      <div class="srow">
+        <div class="sbox"><div class="sval" id="stat-challenges">0</div><div class="slbl">Challenges</div></div>
+        <div class="sbox"><div class="sval" id="stat-points">0</div><div class="slbl">Points</div></div>
+        <div class="sbox"><div class="sval" id="stat-streak">0</div><div class="slbl">Day streak</div></div>
+      </div>
+      <div class="sec">Your challenges</div>
+      <div id="challenge-list"></div>
+    </div>
+    <div class="nav" id="nav-home">
+      <button class="ni on" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  <!-- JOURNEY -->
+  <div class="screen" id="s-journey">
+    <div class="status"><span id="clock2">9:41</span></div>
+    <div class="ph"><div class="ttl">My <span>journey</span></div><div class="sub">12-week program to master solitude</div></div>
+    <div class="content">
+      <div class="sec">Weekly streak</div>
+      <div class="streak-row" id="streak-display"></div>
+      <div class="sec">The four levels</div>
+      <div class="lgrid">
+        <div class="ltile" style="background:#E8F5E9;">
+          <i class="ti ti-seedling" style="color:var(--sage);font-size:22px"></i>
+          <div class="lvn">Level 1</div><div class="lvname">Curious</div>
+          <div class="lpb"><div class="lpf" style="width:100%"></div></div>
+          <div style="font-size:10px;color:#3B6D11;margin-top:4px;font-weight:500;">Completed ✓</div>
+        </div>
+        <div class="ltile cur">
+          <i class="ti ti-compass" style="color:var(--sage);font-size:22px"></i>
+          <div class="lvn">Level 2</div><div class="lvname">Explorer</div>
+          <div class="lpb"><div class="lpf" id="level2-bar" style="width:0%"></div></div>
+          <div style="font-size:10px;color:var(--sage);margin-top:4px;font-weight:500;">In progress</div>
+        </div>
+        <div class="ltile locked">
+          <i class="ti ti-star" style="color:var(--sage);font-size:22px"></i>
+          <div class="lvn">Level 3</div><div class="lvname">Confident</div>
+          <div class="lpb"><div class="lpf" style="width:0%"></div></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Locked</div>
+        </div>
+        <div class="ltile locked">
+          <i class="ti ti-crown" style="color:var(--sage);font-size:22px"></i>
+          <div class="lvn">Level 4</div><div class="lvname">Solo Master</div>
+          <div class="lpb"><div class="lpf" style="width:0%"></div></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Locked</div>
+        </div>
+      </div>
+      <div class="sec">Level 2 — Explorer</div>
+      <div id="journey-list"></div>
+    </div>
+    <div class="nav">
+      <button class="ni" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni on" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="screen" id="s-map" style="overflow:hidden;">
+    <div class="status" style="background:var(--cream);z-index:10;position:relative;"><span>9:41</span><div style="display:flex;gap:4px;align-items:center;"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+
+    <!-- Map full bleed -->
+    <div id="leaflet-map" style="flex:1;min-height:0;z-index:1;"></div>
+
+    <!-- Filter pills floating over map -->
+    <div style="position:absolute;top:48px;left:0;right:0;z-index:20;padding:10px 14px 0;pointer-events:none;">
+      <div class="pills" style="pointer-events:all;flex-wrap:nowrap;overflow-x:auto;background:rgba(245,240,232,0.92);backdrop-filter:blur(8px);border-radius:40px;padding:6px 10px;box-shadow:0 2px 12px rgba(0,0,0,.12);">
+        <button class="pill on" onclick="filterMap('all',this)">All</button>
+        <button class="pill" onclick="filterMap('cafe',this)">Cafés</button>
+        <button class="pill" onclick="filterMap('restaurant',this)">Restaurants</button>
+        <button class="pill" onclick="filterMap('museum',this)">Museums</button>
+        <button class="pill" onclick="filterMap('cinema',this)">Cinema</button>
+        <button class="pill" onclick="filterMap('gym',this)">Fitness</button>
+      </div>
+    </div>
+
+    <!-- Venue sheet slides up when marker tapped -->
+    <div id="venue-sheet" style="position:absolute;bottom:68px;left:0;right:0;z-index:30;padding:0 14px;transform:translateY(120%);transition:transform .35s cubic-bezier(.32,1,.36,1);">
+      <div style="background:var(--cream);border-radius:20px;padding:18px;box-shadow:0 -4px 30px rgba(0,0,0,.15);">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div id="vs-icon" style="width:48px;height:48px;border-radius:14px;background:var(--sage-pale);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--sage);flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <div id="vs-name" style="font-size:15px;font-weight:500;color:var(--dark);"></div>
+              <div id="vs-perk" style="font-size:11px;background:var(--sage-pale);color:#3B6D11;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap;margin-left:8px;"></div>
+            </div>
+            <div id="vs-neighborhood" style="font-size:11px;color:var(--muted);margin-bottom:6px;"></div>
+            <div id="vs-desc" style="font-size:12px;color:var(--dark);line-height:1.55;"></div>
+          </div>
+          <button onclick="closeVenueSheet()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;flex-shrink:0;margin-top:-2px;">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <a id="vs-directions" href="#" target="_blank" style="flex:1;background:var(--sage);color:#fff;border:none;border-radius:12px;padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;">
+            <i class="ti ti-directions"></i> Directions
+          </a>
+          <button onclick="claimVenueOffer()" style="flex:1;background:var(--sage-pale);color:var(--sage);border:none;border-radius:12px;padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">
+            Claim offer 🎁
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" style="position:relative;z-index:10;">
+      <button class="ni" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni on" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  <!-- COMMUNITY -->
+  <div class="screen" id="s-community">
+    <div class="status"><span>9:41</span></div>
+    <div class="ph"><div class="ttl">Community <span>feed</span></div><div class="sub">No follower counts — just milestones</div></div>
+    <div class="content">
+      <div class="pills">
+        <button class="pill on" onclick="filterPills(this)">All</button>
+        <button class="pill" onclick="filterPills(this)">Milestones</button>
+        <button class="pill" onclick="filterPills(this)">Reflections</button>
+      </div>
+      <div id="feed-list"></div>
+    </div>
+    <div class="nav">
+      <button class="ni" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni on" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="s-profile">
+    <div class="status"><span>9:41</span></div>
+    <div class="ph"><div class="ttl">My <span>profile</span></div></div>
+    <div class="content">
+      <div class="pfhdr">
+        <div class="av" id="profile-av">?</div>
+        <div style="flex:1;">
+          <div class="pname" id="profile-name">User</div>
+          <div class="psub">Solo Explorer · Madrid</div>
+          <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+            <span style="font-size:12px;color:var(--sage);font-weight:500;" id="profile-pts">0 pts</span>
+            <span style="font-size:11px;color:var(--muted);">·</span>
+            <span style="font-size:12px;color:var(--muted);">Level 2 of 4</span>
+          </div>
+        </div>
+        <i class="ti ti-logout" style="font-size:20px;color:var(--muted);cursor:pointer;" onclick="doLogout()"></i>
+      </div>
+      <div class="sec">Badges earned</div>
+      <div class="bgrid" id="badges-list"></div>
+      <div class="sec">My solo journal</div>
+      <button onclick="openJournalModal()" style="width:100%;background:var(--sage-pale);border:.5px dashed var(--sage-light);border-radius:var(--r);padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--sage);cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <i class="ti ti-pencil" style="font-size:16px"></i> Add journal entry
+      </button>
+      <div id="journal-list"></div>
+      <button style="width:100%;background:none;border:.5px solid rgba(226,75,74,.25);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--danger);cursor:pointer;margin-top:16px;" onclick="doLogout()">Sign out</button>
+    </div>
+    <div class="nav">
+      <button class="ni" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni on" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="screen" id="s-notifs">
+    <div class="status"><span>9:41</span></div>
+    <div class="ph">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer;" onclick="showScreen('home')">
+        <i class="ti ti-arrow-left" style="font-size:20px;color:var(--muted)"></i>
+        <span style="font-size:13px;color:var(--muted);">Back</span>
+      </div>
+      <div class="ttl"><span>Notifications</span></div>
+    </div>
+    <div class="content">
+      <div class="notif-item"><div class="ntico"><i class="ti ti-award"></i></div><div class="ntxt"><strong>Badge unlocked!</strong> "Explorer" — you completed Level 2's first challenge.<div class="nttime">2 hours ago</div></div></div>
+      <div class="notif-item"><div class="ntico"><i class="ti ti-flame"></i></div><div class="ntxt"><strong>Keep your streak!</strong> Come back tomorrow to maintain your streak.<div class="nttime">Today</div></div></div>
+      <div class="notif-item"><div class="ntico"><i class="ti ti-map-pin"></i></div><div class="ntxt"><strong>New venue:</strong> La Central Bookstore is now on the Solo-Friendly Map.<div class="nttime">Yesterday</div></div></div>
+      <div class="notif-item"><div class="ntico"><i class="ti ti-gift"></i></div><div class="ntxt"><strong>Reward unlocked:</strong> Free coffee at Café de la Luz, valid until Sunday.<div class="nttime">3 days ago</div></div></div>
+    </div>
+    <div class="nav">
+      <button class="ni" onclick="showScreen('home')"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="ni" onclick="showScreen('journey')"><i class="ti ti-route"></i><span>Journey</span></button>
+      <button class="ni" onclick="showScreen('map')"><i class="ti ti-map-pin"></i><span>Map</span></button>
+      <button class="ni" onclick="showScreen('community')"><i class="ti ti-users"></i><span>Community</span></button>
+      <button class="ni" onclick="showScreen('profile')"><i class="ti ti-user"></i><span>Me</span></button>
+    </div>
+  </div>
+
+  </div><!-- /screens -->
+
+  <!-- CHALLENGE MODAL -->
+  <div class="modal-overlay hidden" id="challenge-modal">
+    <div class="modal-sheet">
+      <div class="mhandle"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="background:var(--sage-pale);color:#3B6D11;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:500;" id="modal-level-badge">Level 2 · Explorer</div>
+        <div style="font-size:11px;color:var(--muted);" id="modal-pts">+80 pts</div>
+      </div>
+      <div class="mtitle" id="modal-title">Solo dinner at a restaurant</div>
+      <div class="msubtxt" id="modal-desc">Tonight, pick a sit-down restaurant in Malasaña or Chueca. Ask for a table for one. Leave your phone face-down. Observe, eat, feel.</div>
+      <div class="sec">How it works</div>
+      <ul class="steps">
+        <li><div class="snum">1</div><div><strong style="font-weight:500;">60-sec audio prep</strong> — a quick mental reframe before you leave. Takes the edge off.</div></li>
+        <li><div class="snum">2</div><div><strong style="font-weight:500;">Do it</strong> — complete the challenge, phone face-down.</div></li>
+        <li><div class="snum">3</div><div><strong style="font-weight:500;">Verify</strong> — take a photo or geo check-in at the venue.</div></li>
+        <li><div class="snum">4</div><div><strong style="font-weight:500;">Reflect</strong> — answer one journal prompt. Earn pts + badge.</div></li>
+      </ul>
+      <div style="background:var(--sage-pale);border-radius:var(--r);padding:13px;margin-bottom:14px;display:flex;gap:11px;align-items:center;">
+        <i class="ti ti-map-pin" style="font-size:19px;color:var(--sage)"></i>
+        <div><div style="font-size:13px;font-weight:500;margin-bottom:2px;">Playing Solo — Malasaña</div><div style="font-size:11px;color:var(--muted);">Just Me partner · Solo table available</div></div>
+      </div>
+      <button class="btn" id="modal-cta" onclick="completeChallenge()">Mark as completed ✓</button>
+      <button onclick="closeChallengeModal()" style="width:100%;background:none;border:none;padding:12px;font-size:13px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;">Maybe later</button>
+    </div>
+  </div>
+
+  <!-- JOURNAL MODAL -->
+  <div class="modal-overlay hidden" id="journal-modal">
+    <div class="jmodal">
+      <div class="mhandle"></div>
+      <div class="mtitle">New journal entry</div>
+      <div class="msubtxt" style="margin-bottom:14px;">How did your solo experience go? What did you notice?</div>
+      <textarea class="jtextarea" id="journal-input" placeholder="I almost didn't go, but then..."></textarea>
+      <button class="btn" onclick="saveJournalEntry()">Save entry</button>
+      <button onclick="closeJournalModal()" style="width:100%;background:none;border:none;padding:12px;font-size:13px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+    </div>
+  </div>
+
+</div><!-- /app-layer -->
+
+<script>
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+var state = {
+  user: null,
+  points: 0,
+  streak: 0,
+  completedIds: [],
+  journalEntries: [],
+  feedLikes: {},
+  currentChallengeId: null
+};
+
+var ALL_CHALLENGES = [
+  {id:'coffee',  icon:'ti-coffee',           title:'Solo coffee for 30 min',      desc:'Go to a café alone. No scrolling. Just you and your drink.',           pts:40,  done:false},
+  {id:'walk',    icon:'ti-walk',              title:'Walk without headphones',     desc:'Walk for 20 min with no music or podcasts. Just the sounds around you.',pts:30,  done:false},
+  {id:'dinner',  icon:'ti-tools-kitchen-2',   title:'Solo dinner at a restaurant', desc:'Pick a table for one. Leave your phone face-down. Order what you want.',pts:80,  done:false},
+  {id:'museum',  icon:'ti-building-museum',   title:'Solo museum visit',           desc:'Visit a museum or gallery alone. Spend time with what actually interests you.',pts:60, done:false},
+  {id:'fitness', icon:'ti-yoga',              title:'Fitness class alone',         desc:'Sign up for a yoga, gym or fitness class and go by yourself.',          pts:70,  done:false},
+  {id:'cinema',  icon:'ti-movie',             title:'Go to the cinema solo',       desc:'Buy one ticket. Sit wherever you want. No one to negotiate with.',      pts:80,  done:false},
+  {id:'bar',     icon:'ti-glass-full',        title:'Drink alone at a bar',        desc:'Order a drink at a bar and stay for at least 30 min. Own the stool.',   pts:90,  done:false},
+];
+
+var FEED_POSTS = [
+  {av:'M',bg:'#C8D9C9',col:'#3B6D11',name:'Marta',level:2,time:'2 hours ago',tag:'New badge',tagbg:'#EEF3EE',tagcol:'#3B6D11',chip:'🏛️ Completed: Solo Museum Visit · +60 pts',txt:'Went to Reina Sofía alone for the first time. Spent 2 hours in rooms I\'d always rushed through with others. Guernica hits different when no one is waiting for you.',likes:24,id:'post1'},
+  {av:'A',bg:'#D6E4F5',col:'#185FA5',name:'Álvaro',level:3,time:'5 hours ago',tag:'Level up!',tagbg:'#FFF3E0',tagcol:'#E65100',chip:'🎬 Completed: Solo Cinema · +80 pts',txt:'Bought a single ticket and felt embarrassed at first. By the opening credits I forgot anyone else was in the room. Go on a Tuesday morning.',likes:41,id:'post2'},
+  {av:'S',bg:'#F3E5F5',col:'#7B1FA2',name:'Sofia',level:1,time:'Yesterday',tag:'',tagbg:'',tagcol:'',chip:'🚶 Completed: Walk without headphones · +40 pts',txt:'I kept reaching for my phone every 30 seconds. Then I stopped. Heard a busker in Malasaña I would have completely missed. Small thing but I feel proud.',likes:17,id:'post3'},
+];
+
+// ══════════════════════════════════
+// CLOCK
+// ══════════════════════════════════
+function updateClock(){
+  var now=new Date();
+  var h=now.getHours(),m=now.getMinutes();
+  var t=(h%12||12)+':'+(m<10?'0':'')+m;
+  var greet=h<12?'morning':h<17?'afternoon':'evening';
+  var el1=document.getElementById('clock');
+  var el2=document.getElementById('clock2');
+  var elg=document.getElementById('greeting-time');
+  if(el1)el1.textContent=t;
+  if(el2)el2.textContent=t;
+  if(elg)elg.textContent=greet;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ══════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════
+function obNext(n){
+  document.querySelectorAll('.ob-slide').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ob-'+n).classList.add('active');
+}
+function showOb(n){
+  document.getElementById('ob-layer').className='show';
+  document.getElementById('auth-layer').className='';
+  document.getElementById('app-layer').className='';
+  obNext(n);
+}
+
+// ══════════════════════════════════
+// AUTH
+// ══════════════════════════════════
+function showAuth(type){
+  document.getElementById('ob-layer').className='';
+  document.getElementById('auth-layer').className='show';
+  document.getElementById('app-layer').className='';
+  document.getElementById('auth-signup-inner').style.display=type==='signup'?'flex':'none';
+  document.getElementById('auth-login-inner').style.display=type==='login'?'flex':'none';
+}
+
+function doSignup(){
+  var name=document.getElementById('su-name').value.trim();
+  var email=document.getElementById('su-email').value.trim();
+  var pass=document.getElementById('su-pass').value;
+  var err=document.getElementById('su-err');
+  if(!name||!email.includes('@')||pass.length<6){err.style.display='block';return;}
+  err.style.display='none';
+  enterApp(name,email);
+}
+function doLogin(){
+  var email=document.getElementById('li-email').value.trim();
+  var pass=document.getElementById('li-pass').value;
+  var err=document.getElementById('li-err');
+  if(!email||!pass){err.style.display='block';return;}
+  err.style.display='none';
+  var name=email.split('@')[0];
+  name=name.charAt(0).toUpperCase()+name.slice(1);
+  enterApp(name,email);
+}
+function quickLogin(name,email){enterApp(name,email);}
+
+function enterApp(name,email){
+  state.user={name:name,email:email};
+  state.points=0; state.streak=0; state.completedIds=[]; state.journalEntries=[];
+  document.getElementById('ob-layer').className='';
+  document.getElementById('auth-layer').className='';
+  document.getElementById('app-layer').className='show';
+  var first=name.split(' ')[0];
+  var letter=first[0].toUpperCase();
+  document.getElementById('home-name').textContent=first;
+  document.getElementById('profile-name').textContent=name;
+  document.getElementById('profile-av').textContent=letter;
+  document.getElementById('profile-av').textContent=letter;
+  renderChallenges();
+  renderJourney();
+  renderFeed();
+  renderProfile();
+  renderStreak();
+  showScreen('home');
+  setTimeout(()=>showToast('Welcome to Just Me, '+first+' 🌿'),400);
+}
+
+function doLogout(){
+  state.user=null;
+  showOb(0);
+  showToast('See you next time! 👋');
+}
+
+// ══════════════════════════════════
+// SCREENS
+// ══════════════════════════════════
+function showScreen(name){
+  document.querySelectorAll('#screens .screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if(name==='notifs'){document.getElementById('notif-dot').style.display='none';}
+  if(name==='profile'){renderProfile();}
+}
+
+// ══════════════════════════════════
+// CHALLENGES
+// ══════════════════════════════════
+function renderChallenges(){
+  var list=document.getElementById('challenge-list');
+  list.innerHTML='';
+  ALL_CHALLENGES.forEach(function(c){
+    var done=state.completedIds.indexOf(c.id)>=0;
+    var div=document.createElement('div');
+    div.className='cc'+(done?'  completed':' clickable');
+    div.innerHTML=`
+      <div class="cico${done?' done':''}"><i class="ti ${done?'ti-check':c.icon}"></i></div>
+      <div class="cinf"><h4${done?' style="text-decoration:line-through;opacity:.6;"':''}>${c.title}</h4><p>Level 2 · Explorer${done?' · '+c.pts+' pts earned':''}</p></div>
+      ${done?'<div class="dbadge"><i class="ti ti-check" style="font-size:11px"></i> Done</div>':'<div class="cpts">+'+c.pts+' pts</div>'}
+    `;
+    if(!done) div.onclick=function(){openChallengeModal(c.id);};
+    list.appendChild(div);
+  });
+  updateStats();
+}
+
+function renderJourney(){
+  var list=document.getElementById('journey-list');
+  if(!list)return;
+  list.innerHTML='';
+  ALL_CHALLENGES.forEach(function(c){
+    var done=state.completedIds.indexOf(c.id)>=0;
+    var div=document.createElement('div');
+    div.className='cc'+(done?' completed':' clickable');
+    div.style.opacity=done?'0.7':'1';
+    div.innerHTML=`
+      <div class="cico${done?' done':''}"><i class="ti ${done?'ti-check':c.icon}"></i></div>
+      <div class="cinf"><h4>${c.title}</h4><p>${done?'Completed · +'+c.pts+' pts earned':'Tap to start'}</p></div>
+      ${done?'<div class="dbadge">Done</div>':'<div class="cpts">+'+c.pts+' pts</div>'}
+    `;
+    if(!done) div.onclick=function(){openChallengeModal(c.id);};
+    list.appendChild(div);
+  });
+  var done=state.completedIds.length;
+  var pct=Math.round((done/ALL_CHALLENGES.length)*100);
+  var bar=document.getElementById('level2-bar');
+  if(bar) bar.style.width=pct+'%';
+}
+
+function updateStats(){
+  var done=state.completedIds.length;
+  document.getElementById('stat-challenges').textContent=done;
+  document.getElementById('stat-points').textContent=state.points;
+  document.getElementById('stat-streak').textContent=state.streak;
+  document.getElementById('home-sub').textContent='Level 2 · Explorer · '+done+' challenge'+(done===1?'':'s')+' done';
+  var pct=Math.round((done/ALL_CHALLENGES.length)*100);
+  document.getElementById('hero-progress').style.width=pct+'%';
+  document.getElementById('hero-progress-lbl').textContent=done+' of '+ALL_CHALLENGES.length+' completed · Level 2';
+}
+
+// ══════════════════════════════════
+// CHALLENGE MODAL
+// ══════════════════════════════════
+function openChallengeModal(id){
+  state.currentChallengeId=id;
+  var c=ALL_CHALLENGES.find(function(x){return x.id===id;});
+  if(!c)return;
+  var done=state.completedIds.indexOf(id)>=0;
+  document.getElementById('modal-title').textContent=c.title;
+  document.getElementById('modal-desc').textContent=c.desc;
+  document.getElementById('modal-pts').textContent='+'+c.pts+' pts';
+  var cta=document.getElementById('modal-cta');
+  if(done){cta.textContent='Already completed ✓';cta.style.opacity='0.6';cta.onclick=function(){closeChallengeModal();};}
+  else{cta.textContent='Mark as completed ✓';cta.style.opacity='1';cta.onclick=completeChallenge;}
+  document.getElementById('challenge-modal').classList.remove('hidden');
+}
+function closeChallengeModal(){document.getElementById('challenge-modal').classList.add('hidden');}
+
+function completeChallenge(){
+  var id=state.currentChallengeId;
+  if(!id||state.completedIds.indexOf(id)>=0)return;
+  var c=ALL_CHALLENGES.find(function(x){return x.id===id;});
+  if(!c)return;
+  state.completedIds.push(id);
+  state.points+=c.pts;
+  state.streak=Math.min(state.streak+1,7);
+  closeChallengeModal();
+  confetti();
+  renderChallenges();
+  renderJourney();
+  renderStreak();
+  renderProfile();
+  addFeedPost(c);
+  setTimeout(function(){
+    showToast('+'+c.pts+' pts earned! 🎉');
+    openJournalModal(c.title);
+  },600);
+}
+
+// ══════════════════════════════════
+// CONFETTI
+// ══════════════════════════════════
+function confetti(){
+  var colors=['#7A9E7E','#C8D9C9','#F5F0E8','#FFD54F','#FF8A65'];
+  for(var i=0;i<18;i++){
+    (function(i){
+      setTimeout(function(){
+        var d=document.createElement('div');
+        d.className='confetti-dot';
+        d.style.left=(30+Math.random()*40)+'%';
+        d.style.top='40%';
+        d.style.background=colors[Math.floor(Math.random()*colors.length)];
+        d.style.animationDuration=(0.8+Math.random()*0.8)+'s';
+        d.style.animationDelay=(Math.random()*0.3)+'s';
+        document.getElementById('phone').appendChild(d);
+        setTimeout(function(){d.remove();},1500);
+      },i*40);
+    })(i);
+  }
+}
+
+// ══════════════════════════════════
+// STREAK
+// ══════════════════════════════════
+function renderStreak(){
+  var el=document.getElementById('streak-display');
+  if(!el)return;
+  var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var s=state.streak;
+  el.innerHTML=days.map(function(d,i){
+    var cls=i<s?'done':i===s?'today':'off';
+    return '<div class="sd '+cls+'">'+d+'</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════
+function openJournalModal(challengeTitle){
+  var ta=document.getElementById('journal-input');
+  ta.value='';
+  if(challengeTitle){ta.placeholder='After "'+challengeTitle+'" — how did it go?';}
+  else{ta.placeholder='I almost didn\'t go, but then...';}
+  document.getElementById('journal-modal').classList.remove('hidden');
+}
+function closeJournalModal(){document.getElementById('journal-modal').classList.add('hidden');}
+function saveJournalEntry(){
+  var txt=document.getElementById('journal-input').value.trim();
+  if(!txt){showToast('Write something first ✍️');return;}
+  var now=new Date();
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var date=months[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+  state.journalEntries.unshift({date:date,text:txt});
+  closeJournalModal();
+  renderJournalList();
+  showToast('Journal entry saved 📓');
+}
+function renderJournalList(){
+  var el=document.getElementById('journal-list');
+  if(!el)return;
+  if(state.journalEntries.length===0){
+    el.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">No entries yet. Complete a challenge to get started.</div>';
+    return;
+  }
+  el.innerHTML=state.journalEntries.map(function(e,i){
+    return '<div class="journal-entry"><button class="jdelete" onclick="deleteJournal('+i+')"><i class="ti ti-x" style="font-size:14px"></i></button><div class="jdate">'+e.date+'</div><div class="jtxt">'+e.text+'</div></div>';
+  }).join('');
+}
+function deleteJournal(i){
+  state.journalEntries.splice(i,1);
+  renderJournalList();
+  showToast('Entry deleted');
+}
+
+// ══════════════════════════════════
+// PROFILE
+// ══════════════════════════════════
+var ALL_BADGES=[
+  {id:'coffee',  icon:'ti-coffee',  label:'First solo coffee'},
+  {id:'walk',    icon:'ti-walk',    label:'Silent walker'},
+  {id:'dinner',  icon:'ti-tools-kitchen-2', label:'Solo diner'},
+  {id:'museum',  icon:'ti-building-museum', label:'Art solo'},
+  {id:'cinema',  icon:'ti-movie',   label:'Solo cinema'},
+  {id:'fitness', icon:'ti-yoga',    label:'Fitness alone'},
+  {id:'bar',     icon:'ti-glass-full', label:'Bar solo'},
+];
+function renderProfile(){
+  document.getElementById('profile-pts').textContent=state.points+' pts';
+  var done=state.completedIds;
+  var el=document.getElementById('badges-list');
+  if(!el)return;
+  el.innerHTML=ALL_BADGES.map(function(b){
+    var earned=done.indexOf(b.id)>=0;
+    return '<div class="bitem" style="opacity:'+( earned?'1':'0.3')+'"><i class="ti '+b.icon+'"></i>'+b.label+'</div>';
+  }).join('');
+  renderJournalList();
+}
+
+// ══════════════════════════════════
+// FEED
+// ══════════════════════════════════
+function renderFeed(){
+  var el=document.getElementById('feed-list');
+  if(!el)return;
+  el.innerHTML='';
+  FEED_POSTS.forEach(function(p){renderFeedCard(p,el,false);});
+}
+function addFeedPost(challenge){
+  var first=state.user.name.split(' ')[0];
+  var letter=first[0].toUpperCase();
+  var p={
+    av:letter, bg:'#EEF3EE', col:'#3B6D11',
+    name:first+' (you)', level:2, time:'Just now',
+    tag:'New!', tagbg:'#EEF3EE', tagcol:'#3B6D11',
+    chip:'✅ Completed: '+challenge.title+' · +'+challenge.pts+' pts',
+    txt:'I just completed "'+challenge.title+'". More reflections in my journal.',
+    likes:0, id:'user-'+Date.now()
+  };
+  FEED_POSTS.unshift(p);
+  renderFeed();
+}
+function renderFeedCard(p,container,prepend){
+  var div=document.createElement('div');
+  div.className='feed-card';
+  div.innerHTML=`
+    <div class="feed-hdr">
+      <div class="feed-av" style="background:${p.bg};color:${p.col};">${p.av}</div>
+      <div><div class="feed-name">${p.name} · Level ${p.level}</div><div class="feed-time">${p.time}</div></div>
+      ${p.tag?'<div style="margin-left:auto;background:'+p.tagbg+';color:'+p.tagcol+';font-size:10px;font-weight:500;padding:3px 8px;border-radius:8px;">'+p.tag+'</div>':''}
+    </div>
+    <div class="feed-chip">${p.chip}</div>
+    <div class="feed-txt">${p.txt}</div>
+    <div class="feed-actions">
+      <button class="feed-btn" id="like-${p.id}" onclick="toggleLike('${p.id}',${p.likes})"><i class="ti ti-heart" style="font-size:13px"></i> <span id="like-count-${p.id}">${p.likes}</span></button>
+      <button class="feed-btn" onclick="showToast('Replies coming in v1.0 💬')"><i class="ti ti-message" style="font-size:13px"></i> Reply</button>
+    </div>
+  `;
+  if(prepend&&container.firstChild)container.insertBefore(div,container.firstChild);
+  else container.appendChild(div);
+}
+function toggleLike(id,baseLikes){
+  var btn=document.getElementById('like-'+id);
+  var count=document.getElementById('like-count-'+id);
+  if(!btn||!count)return;
+  var liked=state.feedLikes[id]||false;
+  liked=!liked;
+  state.feedLikes[id]=liked;
+  btn.className='feed-btn'+(liked?' liked':'');
+  count.textContent=liked?baseLikes+1:baseLikes;
+  if(liked){btn.style.animation='pop .3s ease';setTimeout(function(){btn.style.animation='';},300);}
+}
+
+// ══════════════════════════════════
+// PILLS
+// ══════════════════════════════════
+function filterPills(el){
+  el.closest('.pills').querySelectorAll('.pill').forEach(function(p){p.classList.remove('on');});
+  el.classList.add('on');
+}
+
+// ══════════════════════════════════
+// TOAST
+// ══════════════════════════════════
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2800);
+}
+
+// ══════════════════════════════════
+// CLOSE MODALS ON OVERLAY CLICK
+// ══════════════════════════════════
+document.getElementById('challenge-modal').addEventListener('click',function(e){if(e.target===this)closeChallengeModal();});
+document.getElementById('journal-modal').addEventListener('click',function(e){if(e.target===this)closeJournalModal();});
+
+// ══════════════════════════════════
+// MAP — LEAFLET + VENUES
+// ══════════════════════════════════
+var MAP_VENUES = [
+  {id:'v1', name:'Playing Solo', type:'restaurant', neighborhood:'Malasaña', lat:40.4237, lng:-3.7064, perk:'Solo table reserved', icon:'🍽️', emoji:'ti-tools-kitchen-2', desc:'MICHELIN Guide restaurant designed for solo diners. Single counter seats with chargers. The flagship Just Me partner.', gmaps:'https://maps.google.com/?q=Playing+Solo+Madrid'},
+  {id:'v2', name:'Café de la Luz', type:'cafe', neighborhood:'Malasaña', lat:40.4252, lng:-3.7045, perk:'Free coffee', icon:'☕', emoji:'ti-coffee', desc:'Window seat reserved for Just Me members. Order a specialty coffee and stay as long as you like. No one will rush you.', gmaps:'https://maps.google.com/?q=Café+de+la+Luz+Madrid'},
+  {id:'v3', name:'Federal Café', type:'cafe', neighborhood:'Lavapiés', lat:40.4105, lng:-3.7012, perk:'Solo brunch menu', icon:'☕', emoji:'ti-coffee', desc:'Australian-style café with a dedicated solo bar. Great for a long solo brunch on a Sunday morning.', gmaps:'https://maps.google.com/?q=Federal+Café+Madrid'},
+  {id:'v4', name:'Museo Sorolla', type:'museum', neighborhood:'Chamberí', lat:40.4318, lng:-3.6947, perk:'-10% solo', icon:'🏛️', emoji:'ti-building-museum', desc:'The painter\'s own home, now a museum. Intimate and quiet — perfect to explore at your own pace with no one to keep up with.', gmaps:'https://maps.google.com/?q=Museo+Sorolla+Madrid'},
+  {id:'v5', name:'Museo Lázaro Galdiano', type:'museum', neighborhood:'Salamanca', lat:40.4370, lng:-3.6851, perk:'Free entry solo', icon:'🏛️', emoji:'ti-building-museum', desc:'Underrated gem. 4 floors of art in a beautiful mansion. Almost always uncrowded — ideal for a solo afternoon.', gmaps:'https://maps.google.com/?q=Museo+Lazaro+Galdiano+Madrid'},
+  {id:'v6', name:'Cines Verdi', type:'cinema', neighborhood:'Chueca', lat:40.4265, lng:-3.6983, perk:'Solo Wed special', icon:'🎬', emoji:'ti-movie', desc:'Wednesday solo screenings with reserved single seats in the middle of the row. No awkward armrest negotiations.', gmaps:'https://maps.google.com/?q=Cines+Verdi+Madrid'},
+  {id:'v7', name:'Sala Equis', type:'cinema', neighborhood:'Lavapiés', lat:40.4118, lng:-3.7038, perk:'1 free popcorn', icon:'🎬', emoji:'ti-movie', desc:'Cult cinema in a restored adult cinema space. Has a bar inside — you can bring your drink to your seat.', gmaps:'https://maps.google.com/?q=Sala+Equis+Madrid'},
+  {id:'v8', name:'Verde Studio', type:'gym', neighborhood:'Chueca', lat:40.4247, lng:-3.6972, perk:'1 free class', icon:'🧘', emoji:'ti-yoga', desc:'Boutique yoga and pilates studio. First class is free for Just Me members. Small groups, never overwhelming.', gmaps:'https://maps.google.com/?q=Chueca+Madrid'},
+  {id:'v9', name:'La Central Bookstore', type:'cafe', neighborhood:'Malasaña', lat:40.4225, lng:-3.7058, perk:'Book discount', icon:'📚', emoji:'ti-book', desc:'Bookstore-café with a dedicated solo reading corner. Buy a book, order a coffee, and lose track of time.', gmaps:'https://maps.google.com/?q=La+Central+Malasana+Madrid'},
+  {id:'v10',name:'Lateral Fuencarral', type:'restaurant', neighborhood:'Malasaña', lat:40.4243, lng:-3.7020, perk:'Solo bar menu', icon:'🍽️', emoji:'ti-tools-kitchen-2', desc:'Long bar with tapas. Easy to rock up alone and eat well without booking. Lively atmosphere but solo-friendly layout.', gmaps:'https://maps.google.com/?q=Lateral+Fuencarral+Madrid'},
+  {id:'v11',name:'Gymage', type:'gym', neighborhood:'Gran Vía', lat:40.4192, lng:-3.7023, perk:'Day pass -20%', icon:'🧘', emoji:'ti-yoga', desc:'Full gym + rooftop pool. Go on a weekday morning when it\'s quiet. Perfect level 3 solo challenge territory.', gmaps:'https://maps.google.com/?q=Gymage+Madrid'},
+  {id:'v12',name:'Museo Reina Sofía', type:'museum', neighborhood:'Atocha', lat:40.4082, lng:-3.6942, perk:'Early access solo', icon:'🏛️', emoji:'ti-building-museum', desc:'Home to Guernica. Go first thing on a Tuesday when the big rooms are almost empty. One of the best solo museum experiences in Europe.', gmaps:'https://maps.google.com/?q=Museo+Reina+Sofia+Madrid'},
+];
+
+var leafletMap = null;
+var venueMarkers = {};
+var activeVenueId = null;
+
+function initMap(){
+  if(leafletMap) return;
+  leafletMap = L.map('leaflet-map', {
+    center: [40.4230, -3.7020],
+    zoom: 14,
+    zoomControl: false,
+    attributionControl: false
+  });
+
+  // Warm, minimal tile style
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(leafletMap);
+
+  L.control.zoom({position:'bottomright'}).addTo(leafletMap);
+
+  // Custom marker icon factory
+  function makeIcon(emoji, type){
+    var colors = {cafe:'#7A9E7E', restaurant:'#5C8260', museum:'#8B7355', cinema:'#6B5B8A', gym:'#5B8A7A'};
+    var bg = colors[type]||'#7A9E7E';
+    var html = '<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:'+bg+';transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:2px solid #fff;">' +
+               '<span style="transform:rotate(45deg);font-size:15px;">'+emoji+'</span></div>';
+    return L.divIcon({html:html, className:'', iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-38]});
+  }
+
+  MAP_VENUES.forEach(function(v){
+    var marker = L.marker([v.lat, v.lng], {icon: makeIcon(v.icon, v.type)})
+      .addTo(leafletMap);
+    marker.on('click', function(){openVenueSheet(v.id);});
+    venueMarkers[v.id] = {marker: marker, type: v.type, visible: true};
+  });
+
+  // Close sheet on map click
+  leafletMap.on('click', function(){closeVenueSheet();});
+}
+
+function filterMap(type, el){
+  el.closest('.pills').querySelectorAll('.pill').forEach(function(p){p.classList.remove('on');});
+  el.classList.add('on');
+  closeVenueSheet();
+  Object.keys(venueMarkers).forEach(function(id){
+    var m = venueMarkers[id];
+    var v = MAP_VENUES.find(function(x){return x.id===id;});
+    if(type==='all'||v.type===type){
+      if(!m.visible){m.marker.addTo(leafletMap);m.visible=true;}
+    } else {
+      if(m.visible){leafletMap.removeLayer(m.marker);m.visible=false;}
+    }
+  });
+}
+
+function openVenueSheet(id){
+  var v = MAP_VENUES.find(function(x){return x.id===id;});
+  if(!v) return;
+  activeVenueId = id;
+  document.getElementById('vs-icon').innerHTML='<i class="ti '+v.emoji+'"></i>';
+  document.getElementById('vs-name').textContent=v.name;
+  document.getElementById('vs-perk').textContent=v.perk;
+  document.getElementById('vs-neighborhood').textContent=v.neighborhood+' · Madrid';
+  document.getElementById('vs-desc').textContent=v.desc;
+  document.getElementById('vs-directions').href=v.gmaps;
+  document.getElementById('venue-sheet').style.transform='translateY(0)';
+  // Pan map up a bit
+  leafletMap.panTo([v.lat - 0.002, v.lng], {animate:true, duration:0.4});
+}
+
+function closeVenueSheet(){
+  document.getElementById('venue-sheet').style.transform='translateY(120%)';
+  activeVenueId=null;
+}
+
+function claimVenueOffer(){
+  if(!activeVenueId) return;
+  var v = MAP_VENUES.find(function(x){return x.id===activeVenueId;});
+  closeVenueSheet();
+  showToast('Offer claimed at '+v.name+' 🎁');
+}
+
+// Initialise map the first time the map tab is shown
+var mapInited = false;
+var origShowScreen = showScreen;
+showScreen = function(name){
+  origShowScreen(name);
+  if(name==='map' && !mapInited){
+    mapInited=true;
+    setTimeout(initMap, 120);
+  }
+};
+</script>
+</div>
+</body>
+</html>
